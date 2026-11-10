@@ -6,19 +6,41 @@
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="DeskIcon" SourceFile="$(var.IconFile)" />
     <Property Id="ARPPRODUCTICON" Value="DeskIcon" />
+    <Property Id="INSTALLFOLDER" Secure="yes" />
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" Sequence="execute" />
+    <UIRef Id="DeskSetup" />
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="RTMP Live Desk">
         <Component Id="DesktopProgram" Guid="*">
-          <File Id="DesktopExe" Source="$(var.PayloadDir)\rtmp_live_desk.exe" KeyPath="yes">
-            <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="RTMP Live Desk"
-                      WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="DeskIcon" IconIndex="0" />
-          </File>
+          <File Id="DesktopExe" Source="$(var.PayloadDir)\rtmp_live_desk.exe" KeyPath="yes" />
         </Component>
       </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuLink" Guid="*">
+        <Shortcut Id="StartMenuShortcut" Name="RTMP Live Desk" Target="[#DesktopExe]"
+                  WorkingDirectory="INSTALLFOLDER" Icon="DeskIcon" />
+        <RegistryValue Root="HKCU" Key="Software\RTMP Live Desk\Installer" Name="StartMenuShortcut"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopLink" Guid="*">
+        <Shortcut Id="DesktopShortcut" Name="RTMP Live Desk" Target="[#DesktopExe]"
+                  WorkingDirectory="INSTALLFOLDER" Icon="DeskIcon" />
+        <RegistryValue Root="HKCU" Key="Software\RTMP Live Desk\Installer" Name="DesktopShortcut"
+                       Type="integer" Value="1" KeyPath="yes" />
+      </Component>
     </StandardDirectory>
     <Feature Id="Main" Title="RTMP Live Desk" Level="1">
       <ComponentRef Id="DesktopProgram" />
       <ComponentGroupRef Id="Payload" />
+      <Feature Id="StartMenuEntry" Title="Start menu shortcut" Level="1">
+        <ComponentRef Id="StartMenuLink" />
+      </Feature>
+      <Feature Id="DesktopEntry" Title="Desktop shortcut" Level="2">
+        <ComponentRef Id="DesktopLink" />
+      </Feature>
     </Feature>
   </Package>
   <Fragment>

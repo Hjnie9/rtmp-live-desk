@@ -1,7 +1,7 @@
 name: rtmp_live_desk
 description: RTMP ingest and live preview for Windows desktops.
 publish_to: none
-version: 1.0.0
+version: 1.0.1
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
@@ -17,6 +17,10 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: 6.0.0
+
+dependency_overrides:
+  media_kit_libs_windows_video:
+    path: third_party/media_kit_libs_windows_video
 
 flutter:
   uses-material-design: true

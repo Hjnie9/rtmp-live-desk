@@ -1,0 +1,77 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Fragment>
+    <UI Id="DeskSetup">
+      <TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+      <TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
+      <TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
+      <Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+      <Property Id="ARPNOMODIFY" Value="1" />
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+      <Property Id="DESK_START_MENU" Value="1" />
+
+      <DialogRef Id="BrowseDlg" />
+      <DialogRef Id="DiskCostDlg" />
+      <DialogRef Id="ErrorDlg" />
+      <DialogRef Id="FatalError" />
+      <DialogRef Id="FilesInUse" />
+      <DialogRef Id="MsiRMFilesInUse" />
+      <DialogRef Id="PrepareDlg" />
+      <DialogRef Id="ProgressDlg" />
+      <DialogRef Id="ResumeDlg" />
+      <DialogRef Id="UserExit" />
+
+      <Dialog Id="DeskOptionsDlg" Width="370" Height="270" Title="[ProductName] Setup">
+        <Control Id="Heading" Type="Text" X="20" Y="15" Width="330" Height="23"
+                 Text="{\WixUI_Font_Bigger}Installation options" />
+        <Control Id="TopDivider" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="FolderLabel" Type="Text" X="20" Y="60" Width="330" Height="16"
+                 Text="Install [ProductName] in this folder" />
+        <Control Id="Folder" Type="PathEdit" X="20" Y="80" Width="260" Height="18"
+                 Property="WIXUI_INSTALLDIR" Indirect="yes" />
+        <Control Id="Browse" Type="PushButton" X="288" Y="80" Width="62" Height="18" Text="Browse...">
+          <Publish Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1" />
+          <Publish Event="SpawnDialog" Value="BrowseDlg" Order="2" />
+        </Control>
+        <Control Id="ShortcutsLabel" Type="Text" X="20" Y="120" Width="330" Height="16"
+                 Text="{\WixUI_Font_Title}Shortcuts" />
+        <Control Id="StartMenu" Type="CheckBox" X="20" Y="143" Width="330" Height="17"
+                 Property="DESK_START_MENU" CheckBoxValue="1" Text="Add to the Start menu" />
+        <Control Id="Desktop" Type="CheckBox" X="20" Y="167" Width="330" Height="17"
+                 Property="DESK_DESKTOP" CheckBoxValue="1" Text="Create a desktop shortcut" />
+        <Control Id="BottomDivider" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="WelcomeDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17"
+                 Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="CheckTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" />
+          <Publish Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="2" />
+          <Publish Event="AddLocal" Value="StartMenuEntry" Order="3" Condition='DESK_START_MENU = "1"' />
+          <Publish Event="Remove" Value="StartMenuEntry" Order="3" Condition='DESK_START_MENU &lt;&gt; "1"' />
+          <Publish Event="AddLocal" Value="DesktopEntry" Order="4" Condition='DESK_DESKTOP = "1"' />
+          <Publish Event="Remove" Value="DesktopEntry" Order="4" Condition='DESK_DESKTOP &lt;&gt; "1"' />
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" Order="5" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17"
+                 Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="DeskOptionsDlg" Condition="NOT Installed" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Condition="Installed AND PATCH" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="CheckTargetPath" Value="[_BrowseProperty]" Order="1" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="SetTargetPath" Value="[_BrowseProperty]" Order="2" />
+      <Publish Dialog="BrowseDlg" Control="OK" Event="EndDialog" Value="Return" Order="3" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="DeskOptionsDlg" Condition="NOT Installed" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MaintenanceTypeDlg" Condition="Installed AND NOT PATCH" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Condition="Installed AND PATCH" />
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MaintenanceTypeDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RepairButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="MaintenanceTypeDlg" Control="RemoveButton" Event="NewDialog" Value="VerifyReadyDlg" />
+      <Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999" />
+    </UI>
+    <UIRef Id="WixUI_Common" />
+  </Fragment>
+</Wix>
