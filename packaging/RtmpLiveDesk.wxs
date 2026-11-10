@@ -2,14 +2,14 @@
   <Package Name="RTMP Live Desk" Manufacturer="RTMP Live Desk contributors"
            Version="$(var.AppVersion)" Language="1033" Scope="perUserOrMachine"
            UpgradeCode="4BBD45D0-4D53-48E4-B4DB-8272FC5FF2E4">
-    <MajorUpgrade DowngradeErrorMessage="A newer version of RTMP Live Desk is already installed." />
+    <MajorUpgrade AllowDowngrades="yes" Schedule="afterInstallInitialize" />
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
     <Icon Id="DeskIcon" SourceFile="$(var.IconFile)" />
     <Property Id="ARPPRODUCTICON" Value="DeskIcon" />
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="RTMP Live Desk">
         <Component Id="DesktopProgram" Guid="*">
-          <File Id="DesktopExe" Source="$(var.PayloadDir)\RtmpLiveDesk.exe" KeyPath="yes">
+          <File Id="DesktopExe" Source="$(var.PayloadDir)\rtmp_live_desk.exe" KeyPath="yes">
             <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="RTMP Live Desk"
                       WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="DeskIcon" IconIndex="0" />
           </File>
@@ -24,7 +24,7 @@
   <Fragment>
     <ComponentGroup Id="Payload" Directory="INSTALLFOLDER">
       <Files Include="$(var.PayloadDir)\**">
-        <Exclude Files="$(var.PayloadDir)\RtmpLiveDesk.exe" />
+        <Exclude Files="$(var.PayloadDir)\rtmp_live_desk.exe" />
       </Files>
     </ComponentGroup>
   </Fragment>

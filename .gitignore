@@ -1,5 +1,8 @@
 /artifacts/
-**/bin/
-**/obj/
-*.user
+/build/
+/.dart_tool/
+/.flutter-plugins-dependencies
+*.iml
+/android/local.properties
+/src/
 *.wixpdb
