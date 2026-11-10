@@ -3,14 +3,26 @@
 cmake_minimum_required(VERSION 3.14)
 project(media_kit_libs_windows_video LANGUAGES CXX)
 
+if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+  find_program(ARM64_ARCHIVE_EXTRACTOR NAMES 7z 7za)
+  if(NOT ARM64_ARCHIVE_EXTRACTOR)
+    message(FATAL_ERROR "Windows ARM64 builds require 7-Zip on PATH")
+  endif()
+endif()
+
 function(unpack_runtime url archive_name hash directory required_file)
   set(archive "${CMAKE_BINARY_DIR}/${archive_name}")
   file(DOWNLOAD "${url}/${archive_name}" "${archive}"
     EXPECTED_HASH "SHA256=${hash}" TLS_VERIFY ON TIMEOUT 180)
   if(NOT EXISTS "${directory}/.archive-${hash}" OR NOT EXISTS "${directory}/${required_file}")
     file(MAKE_DIRECTORY "${directory}")
-    execute_process(COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}"
-      WORKING_DIRECTORY "${directory}" RESULT_VARIABLE result)
+    if(ARM64_ARCHIVE_EXTRACTOR)
+      execute_process(COMMAND "${ARM64_ARCHIVE_EXTRACTOR}" x -y -bd "${archive}"
+        WORKING_DIRECTORY "${directory}" RESULT_VARIABLE result OUTPUT_QUIET)
+    else()
+      execute_process(COMMAND "${CMAKE_COMMAND}" -E tar xf "${archive}"
+        WORKING_DIRECTORY "${directory}" RESULT_VARIABLE result)
+    endif()
     if(NOT result STREQUAL "0" OR NOT EXISTS "${directory}/${required_file}")
       message(FATAL_ERROR "Could not extract ${archive_name}")
     endif()

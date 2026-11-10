@@ -13,7 +13,7 @@ RTMP Live Desk 把 RTMP 服务、推流设置和实时预览放进一个 Flutter
 
 ## 从源码构建
 
-Windows 打包需要 Flutter 3.47.9、Visual Studio 的 Desktop development with C++ 工作负载、.NET SDK 和 WiX 6.0.2。使用与目标架构一致的 Windows 和 Dart SDK。ARM64 还需要 Go 1.27.0 来编译 MediaMTX。[Flutter Windows 开发环境](https://docs.flutter.dev/platform-integration/windows/setup)
+Windows 打包需要 Flutter 3.47.9、Visual Studio 的 Desktop development with C++ 工作负载、.NET SDK 和 WiX 6.0.2。使用与目标架构一致的 Windows 和 Dart SDK。ARM64 还需要 Go 1.27.0 和 7-Zip。[Flutter Windows 开发环境](https://docs.flutter.dev/platform-integration/windows/setup)
 
 ```powershell
 .\scripts\Build-Windows.ps1 -Architecture x64
