@@ -1,0 +1,29 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="RTMP Live Desk" Manufacturer="RTMP Live Desk contributors"
+           Version="1.0.0" Language="1033" Scope="perUserOrMachine"
+           UpgradeCode="4BBD45D0-4D53-48E4-B4DB-8272FC5FF2E4">
+    <MajorUpgrade DowngradeErrorMessage="A newer version of RTMP Live Desk is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="RTMP Live Desk">
+        <Component Id="DesktopProgram" Guid="*">
+          <File Id="DesktopExe" Source="$(var.PayloadDir)\RtmpLiveDesk.exe" KeyPath="yes">
+            <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="RTMP Live Desk"
+                      WorkingDirectory="INSTALLFOLDER" Advertise="yes" />
+          </File>
+        </Component>
+      </Directory>
+    </StandardDirectory>
+    <Feature Id="Main" Title="RTMP Live Desk" Level="1">
+      <ComponentRef Id="DesktopProgram" />
+      <ComponentGroupRef Id="Payload" />
+    </Feature>
+  </Package>
+  <Fragment>
+    <ComponentGroup Id="Payload" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PayloadDir)\**">
+        <Exclude Files="$(var.PayloadDir)\RtmpLiveDesk.exe" />
+      </Files>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
