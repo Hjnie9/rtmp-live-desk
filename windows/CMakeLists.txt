@@ -57,6 +57,13 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+if(FLUTTER_TARGET_PLATFORM STREQUAL "windows-arm64")
+  # media_kit_video 2.0.1 still references the legacy D3D9 enum in its
+  # fallback list. Recent ANGLE headers omit it.
+  target_compile_definitions(media_kit_video_plugin PRIVATE
+    EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE=0x3207)
+endif()
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
