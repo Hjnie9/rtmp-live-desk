@@ -18,6 +18,7 @@ class LivePreview {
     if (engine is NativePlayer) {
       for (final option in const {
         'cache': 'no',
+        'cache-on-disk': 'no',
         'cache-pause': 'no',
         'demuxer-readahead-secs': '0',
         'demuxer-lavf-probe-info': 'no',

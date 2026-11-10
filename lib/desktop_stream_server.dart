@@ -193,10 +193,11 @@ class DesktopStreamServer implements StreamServer {
         process.exitCode.then((code) {
           exitCode = code;
           if (identical(_process, process)) _running = false;
-          if (!ready.isCompleted)
+          if (!ready.isCompleted) {
             ready.completeError(
               StateError(errorLine ?? 'MediaMTX 已退出（$code）。'),
             );
+          }
         }),
       );
       final prepare = Future.wait<void>([
@@ -210,8 +211,9 @@ class DesktopStreamServer implements StreamServer {
           throw TimeoutException(errorLine ?? '等待 RTMP 和预览端口启动超时。');
         },
       );
-      if (exitCode != null)
+      if (exitCode != null) {
         throw StateError(errorLine ?? 'MediaMTX 已退出（$exitCode）。');
+      }
       _running = true;
     } catch (_) {
       await stop();
@@ -275,8 +277,9 @@ class DesktopStreamServer implements StreamServer {
       for (final path in (data['items'] as List? ?? const [])) {
         if (path is! Map ||
             path['name'] != settings.streamPath ||
-            path['online'] != true)
+            path['online'] != true) {
           continue;
+        }
         final tracks = (path['tracks'] as List? ?? const [])
             .whereType<String>()
             .toList();
