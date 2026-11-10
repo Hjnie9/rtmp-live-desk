@@ -1,0 +1,47 @@
+name: Windows x64
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      FLUTTER_SUPPRESS_ANALYTICS: 'true'
+      DART_DISABLE_ANALYTICS: 'true'
+      DOTNET_ROLL_FORWARD: LatestMajor
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Set up Flutter and WiX
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'flutter-windows.zip'
+          curl.exe --fail --silent --show-error --location --retry 2 --max-time 300 -o $archive 'https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.47.9-stable.zip'
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter download failed' }
+          $sha = 'D8E2B5977E09082C6440F89DC1AA887B94C8FBCC3B39222797046295A3F68A9E'
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $sha) {
+            throw 'Flutter SDK SHA-256 mismatch'
+          }
+          tar.exe -xf $archive -C $env:RUNNER_TEMP
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter extraction failed' }
+          Join-Path $env:RUNNER_TEMP 'flutter/bin' >> $env:GITHUB_PATH
+          $wix = Join-Path $env:RUNNER_TEMP 'wix'
+          dotnet tool install wix --version 6.0.2 --tool-path $wix
+          if ($LASTEXITCODE -ne 0) { throw 'WiX installation failed' }
+          $wix >> $env:GITHUB_PATH
+      - name: Build installer
+        shell: pwsh
+        run: ./scripts/Build-Windows.ps1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rtmp-live-desk-win-x64
+          path: artifacts/RTMP-Live-Desk-Setup-*-win-x64.msi
+          if-no-files-found: error
+          compression-level: 0
