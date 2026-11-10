@@ -1,0 +1,50 @@
+name: Publish Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Successful Windows installers workflow run ID
+        required: true
+        type: string
+      notes:
+        description: GitHub release notes
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Publish both MSI packages
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN: ${{ inputs.build_run }}
+          RELEASE_NOTES: ${{ inputs.notes }}
+        run: |
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]]
+          build=$(gh run view "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --json conclusion,workflowName,headBranch,headSha)
+          jq -e '.conclusion == "success" and .workflowName == "Windows installers" and .headBranch == "main"' <<< "$build" > /dev/null
+          commit=$(jq -er '.headSha' <<< "$build")
+          pubspec=$(gh api "repos/$GITHUB_REPOSITORY/contents/pubspec.yaml?ref=$commit" --jq .content | base64 --decode)
+          version=$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*$/\1/p' <<< "$pubspec")
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          tag="v$version"
+          stage="$RUNNER_TEMP/windows-release"
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --pattern 'rtmp-live-desk-win-*' --dir "$stage"
+          x64="$stage/rtmp-live-desk-win-x64/RTMP-Live-Desk-Setup-$version-win-x64.msi"
+          arm64="$stage/rtmp-live-desk-win-arm64/RTMP-Live-Desk-Setup-$version-win-arm64.msi"
+          test -s "$x64" && test -s "$arm64"
+          gh release create "$tag" "$x64" "$arm64" --repo "$GITHUB_REPOSITORY" --target "$commit" --title "RTMP Live Desk $version" --notes "$RELEASE_NOTES" --draft
+          release=$(gh api "repos/$GITHUB_REPOSITORY/releases" --jq ".[] | select(.tag_name == \"$tag\" and .draft)")
+          for package in "$x64" "$arm64"; do
+            digest="sha256:$(sha256sum "$package" | cut -d' ' -f1)"
+            jq -e --arg name "$(basename "$package")" --arg digest "$digest" \
+              '.assets[] | select(.name == $name and .digest == $digest and .state == "uploaded")' <<< "$release" > /dev/null
+          done
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --latest
