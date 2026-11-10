@@ -58,7 +58,6 @@ $crt = Get-ChildItem -Path (Join-Path $vs "VC/Redist/MSVC/*/$Architecture/Micros
     Where-Object { $_.Parent.Parent.Name -match '^\d+\.\d+\.\d+$' } |
     Sort-Object { [version]$_.Parent.Parent.Name } -Descending | Select-Object -First 1
 if (!$crt) { throw "Could not find the $Architecture Visual C++ redistributable files" }
-Get-ChildItem -LiteralPath $crt.FullName -Filter '*.dll' | Copy-Item -Destination $payload
 
 $server = (New-Item -ItemType Directory -Path (Join-Path $payload 'server')).FullName
 if ($Architecture -eq 'x64') {
@@ -120,6 +119,10 @@ Get-ChildItem -LiteralPath $payload -Recurse -File | Where-Object { $_.Extension
         $reader.Dispose()
     }
 }
+
+# Use the compiler's architecture-specific redistributable as shipped.
+# Microsoft can include hybrid ARM64X DLLs in its ARM64 CRT directory.
+Get-ChildItem -LiteralPath $crt.FullName -Filter '*.dll' | Copy-Item -Destination $payload
 
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE'), (Join-Path $root 'THIRD-PARTY.md') -Destination $payload
 $notices = (New-Item -ItemType Directory -Path (Join-Path $payload 'licenses')).FullName
