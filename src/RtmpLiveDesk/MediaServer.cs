@@ -20,9 +20,11 @@ internal sealed class MediaServer : IDisposable
     private WindowsJob? job;
     private string? runtimeDirectory;
     private int apiPort;
+    private int previewPort;
     private string apiPassword = "";
 
     internal bool Running => process is { HasExited: false };
+    internal string PreviewUrl(string path) => $"rtsp://127.0.0.1:{previewPort}/{path}";
 
     internal string LogText
     {
@@ -37,12 +39,14 @@ internal sealed class MediaServer : IDisposable
     {
         settings.Validate();
         await StopAsync();
-        apiPort = PickApiPort();
+        apiPort = PickLoopbackPort(settings.Port);
+        previewPort = PickLoopbackPort(settings.Port, apiPort);
         apiPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
         runtimeDirectory = Path.Combine(AppSettings.DataDirectory, "runtime-" + Guid.NewGuid().ToString("N"));
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var rtmpListening = false;
         var apiListening = false;
+        var previewListening = false;
         var lastError = "";
 
         try
@@ -101,7 +105,8 @@ internal sealed class MediaServer : IDisposable
                 if (line.Contains(" ERR ", StringComparison.Ordinal)) lastError = line;
                 rtmpListening |= line.Contains("[RTMP] started with listener on", StringComparison.Ordinal);
                 apiListening |= line.Contains("[API] started with listener on", StringComparison.Ordinal);
-                if (rtmpListening && apiListening) ready.TrySetResult();
+                previewListening |= line.Contains("[RTSP] started with listener", StringComparison.Ordinal);
+                if (rtmpListening && apiListening && previewListening) ready.TrySetResult();
             }
         }
     }
@@ -170,11 +175,16 @@ internal sealed class MediaServer : IDisposable
         catch (IOException) { }
     }
 
-    private static int PickApiPort()
+    private static int PickLoopbackPort(params int[] excluded)
     {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        return ((IPEndPoint)listener.LocalEndpoint).Port;
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            using var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            if (!excluded.Contains(port)) return port;
+        }
+        throw new IOException("无法分配本机预览端口。");
     }
 
     private string BuildConfig(AppSettings settings) => $$"""
@@ -197,7 +207,9 @@ internal sealed class MediaServer : IDisposable
         apiAddress: 127.0.0.1:{{apiPort}}
         rtmp: true
         rtmpAddress: "{{settings.BindEndpoint}}"
-        rtsp: false
+        rtsp: true
+        rtspAddress: 127.0.0.1:{{previewPort}}
+        rtspTransports: [tcp]
         hls: false
         webrtc: false
         srt: false

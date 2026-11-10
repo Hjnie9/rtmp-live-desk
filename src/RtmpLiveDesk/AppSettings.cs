@@ -17,9 +17,6 @@ internal sealed record AppSettings(string ListenAddress = "", int Port = 1935, s
     internal string BindEndpoint => Authority(ListenAddress, Port, false);
     internal string PushServer => "rtmp://" + Authority(
         ListenAddress.Length == 0 ? PreferredAddress() : ListenAddress, Port, true) + "/live";
-    internal string PreviewUrl => "rtmp://" + Authority(
-        ListenAddress.Length == 0 ? "127.0.0.1" : ListenAddress, Port, true) + "/" + StreamPath;
-
     internal void Validate()
     {
         if (Port is < 1 or > 65535)

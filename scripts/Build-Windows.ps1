@@ -7,6 +7,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$projectFile = Join-Path $root 'src/RtmpLiveDesk/RtmpLiveDesk.csproj'
+[xml]$project = Get-Content -LiteralPath $projectFile -Raw
+$version = $project.Project.PropertyGroup.Version
+$icon = Join-Path $root 'src/RtmpLiveDesk/Assets/App.ico'
 $artifacts = Join-Path $root 'artifacts'
 if (!$CacheDirectory) { $CacheDirectory = Join-Path $artifacts 'cache' }
 if (!$OutputDirectory) { $OutputDirectory = $artifacts }
@@ -36,7 +40,7 @@ $vlcArchive = Get-Archive 'vlc-3.0.24-win64.zip' `
     'https://download.videolan.org/pub/videolan/vlc/3.0.24/win64/vlc-3.0.24-win64.zip' `
     'fcf30850371ad10c9373cc4f0f4501e7dee49e3e9ae9f20c72fb2661a1ca6323'
 
-& $Dotnet publish (Join-Path $root 'src/RtmpLiveDesk/RtmpLiveDesk.csproj') -c Release -r win-x64 `
+& $Dotnet publish $projectFile -c Release -r win-x64 `
     --self-contained true --source 'https://api.nuget.org/v3/index.json' "-p:RestorePackagesPath=$nuget" `
     -p:DebugType=None -p:DebugSymbols=false -o $payload
 if ($LASTEXITCODE -ne 0) { throw 'Desktop publish failed' }
@@ -59,11 +63,12 @@ Copy-Item -LiteralPath (Join-Path $netRuntime 'LICENSE.TXT') -Destination (Join-
 Copy-Item -LiteralPath (Join-Path $netRuntime 'THIRD-PARTY-NOTICES.TXT') -Destination (Join-Path $notices 'dotnet-THIRD-PARTY-NOTICES.txt')
 Copy-Item -LiteralPath (Join-Path $desktopRuntime 'LICENSE') -Destination (Join-Path $notices 'windowsdesktop-LICENSE.txt')
 
-$msi = Join-Path $output 'RTMP-Live-Desk-1.0.0-win-x64.msi'
+$msi = Join-Path $output "RTMP-Live-Desk-$version-win-x64.msi"
 $previousRollForward = $env:DOTNET_ROLL_FORWARD
 try {
     $env:DOTNET_ROLL_FORWARD = 'LatestMajor'
-    & $Wix build (Join-Path $root 'packaging/RtmpLiveDesk.wxs') -arch x64 -d "PayloadDir=$payload" -pdbtype none -o $msi
+    & $Wix build (Join-Path $root 'packaging/RtmpLiveDesk.wxs') -arch x64 `
+        -d "PayloadDir=$payload" -d "AppVersion=$version" -d "IconFile=$icon" -pdbtype none -o $msi
     if ($LASTEXITCODE -ne 0) { throw 'MSI build failed' }
 }
 finally {
